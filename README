@@ -1,0 +1,45 @@
+                                Tema 4 - Petrea Andrei
+
+        Sleep days : 2 zile
+        Timp de rezolvare : 2 zile
+        
+        Rularea temei:
+            *** make - creeaza executabilul client
+            *** make run - ruleaza executabilul client
+            *** make clean - sterge executabilul client
+
+        Am pornit de la scheletul din laboratorul 9, pe care l-am modificat, reorganizand putin functiile si rescriindu-le sa-mi fie mai 
+    usor pentru C++ si ce imi trebuie la tema. Am creat o clasa de Request in care am pus cele functiile din request.h ca metode statice si in plus am creat o metoda pentru
+    cererea de tip DELETE. Am modificat buffer.h sa fie acum o clasa ca sa imi usureze alocarea si dezalocarea memoriei. Restul de functii din helper.h 
+    se regasesc acum in client.cpp.
+        Clientul este reprezentat printr-o clasa ce contine urmatorii membri. Un enum cu codul fiecarei comanda din tema, un hashmap in care asociez siru de caratere 
+    al comenzii cu codul comenzii (din cauza aceasta enum-ul incepe de la 1, ca operatorul [] pentru std::map va adauga, daca nu gaseste intrare deja o intrare cu valoarea default, adica 0), un tablou de siruri de caractere ce reprezinta rutele pentru fiecare comanda (indexat de la 1 ca sa pot folosi enum-ul, asa ca am introdus un url pe pozitia 0 fictiv), host-ul, fd de socket si 2 string-uri pentru cookie-ul de sesiune si token-ul JWT.
+        In metoda run(), iau input comanda utilizatorului si o trec prin hashmap sa determin ce trebuie facut - rulez comanda sau afisez mesajul de comanda invalida. 
+    (in C++, nu poti sa faic switch pe siruri de caractere, asa ca a trebui sa folosesc o astfel de translatie).
+        Pentru parsarea/trimiterea de JSON-uri, am folosit "JSON for Modern C++" de Niels Lohmann deoarece are un API facil si usor de utilizat, similar cu cel din JS
+    si pentru ca interfereaza usor cu cod C++. Folosesc ordered_json pe post de json ca sa isi pastreze ordinea la cum adaug (json normal le pune alfabetic).
+        Pentru validarea inputului, am folosit expresii regulate cu regex_match si validari de siruri vide.
+
+        **********************************************************************
+
+        Cum arata la mine un input valid pentru fiecare comanda in parte:
+
+        - register/login -> username si password pot sa contina oricare caracter inafara de spatiu.
+        - delete_book/get_book -> id trebuie sa contina doar cifre fara alte caractere
+        - add_book -> titlul poate sa contina oricare caracter
+                   -> autorul si publisher contin doar litere din alfabet cu spatii si punct
+                   -> genre contine doar litere din alfabet fara spatii
+                   -> page count contine doar cifre fara alte caractere
+
+        **********************************************************************
+
+        Pentru comenzile de register/login, introduc username, password, le validez sa fie nenule si in cazul username-ului fara spatii, verific sa nu fie deja
+    logat utilizatorul, creez un obiect json cu cele 2 siruri si creez requestul de tip POST cu ruta corespunzatoare comenzii. Parsez mesajul intors sa nu fi primit eroare si in cazul login salvez cookiul de sesiune.
+        La enter_libray verific ca user-ul sa fie logat, creez o cerere GET si o trimit la server. Parsez JSON-ul intors si salvez token-ul.
+        La get_books verific ca user-ul sa fie atat logat, cat si sa aibe un token valid, si trimit GET-ul. Daca serverul intoarece array vid atunci afisez un 
+    mesaj sugestiv, altfel afisez lista de obiecte JSON.
+        La get_book/delete_book, introduc ID cartii, il validez sa contina doar cifre, verific autentificarea si accesul la biblioteca, calculez ruta, creez cererea de tip GET sau DELETE respectiva si trimit  
+    la server. Verific raspunsul serverului sa fie fara eroare si afisez cartea specifica sau un mesaj sugestiv ca s-a sters cartea.
+        La add_book, introduc titlul, autorul, genre-ul, editura si nr. de pagini, le validez sa fie conforme cu asteptarile, verific autentificarea si accesul la biblioteca, trimit POST la server si verific sa nu fi primit eroare.
+        In functia main, aloc dinamic clientul folosind un smart pointer si apelez metoda run.
+        
